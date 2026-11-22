@@ -53,18 +53,8 @@ def generate_barcode_pdf(
             rect = pymupdf.Rect(x0, y0, x1, y1)
             page.draw_rect(rect, color=(0.8, 0.8, 0.8), width=0.5)
 
-            # Text headers
-            name = rec.get("student_name", "Student")
-            sub = rec.get("subject", "")
             code = rec.get("full_barcode", "")
-
-            page.insert_text(
-                pymupdf.Point(x0 + 8, y0 + 14),
-                f"{name} ({sub})",
-                fontsize=8,
-                fontname="helv",
-                color=(0.1, 0.1, 0.1)
-            )
+            # Sticker holds the barcode only: no student name (identity lives in the Excel mapping)
 
             # Generate barcode image
             try:
@@ -77,11 +67,11 @@ def generate_barcode_pdf(
                 img_data = img_bytes.getvalue()
 
                 # Insert image into sticker rect
-                img_rect = pymupdf.Rect(x0 + 8, y0 + 20, x1 - 8, y1 - 16)
+                img_rect = pymupdf.Rect(x0 + 8, y0 + 8, x1 - 8, y1 - 16)
                 page.insert_image(img_rect, stream=img_data)
             except Exception as e:
                 page.insert_text(
-                    pymupdf.Point(x0 + 8, y0 + 35),
+                    pymupdf.Point(x0 + 8, y0 + 20),
                     f"[Barcode Gen Error: {code}]",
                     fontsize=7,
                     color=(0.8, 0, 0)
