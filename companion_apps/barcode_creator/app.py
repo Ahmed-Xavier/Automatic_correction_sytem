@@ -5,12 +5,14 @@ Standalone Tkinter application for generating student barcode assignments.
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import uuid
+from datetime import datetime
 import sys
 from pathlib import Path
 
 # Ensure project root is on path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from config.paths import BARCODE_DIR, STICKERS_DIR, dialog_dir
 from gui.ui_utils import COLORS, FONTS, apply_theme, SectionHeader
 from companion_apps.barcode_creator.excel_generator import generate_barcode_excel
 from companion_apps.barcode_creator.pdf_generator import generate_barcode_pdf
@@ -135,6 +137,7 @@ class BarCodeCreatorApp:
         import openpyxl
         path = filedialog.askopenfilename(
             title="Select Student List Excel File",
+            initialdir=dialog_dir(BARCODE_DIR),
             filetypes=[("Excel Files", "*.xlsx *.xls"), ("All Files", "*.*")]
         )
         if not path:
@@ -177,6 +180,8 @@ class BarCodeCreatorApp:
             return
         path = filedialog.asksaveasfilename(
             title="Save Barcode Mapping Excel",
+            initialdir=dialog_dir(BARCODE_DIR),
+            initialfile=f"barcodes-{datetime.now():%Y%m%d-%H%M}.xlsx",
             defaultextension=".xlsx",
             filetypes=[("Excel Files", "*.xlsx")]
         )
@@ -194,6 +199,8 @@ class BarCodeCreatorApp:
             return
         path = filedialog.asksaveasfilename(
             title="Save Barcode Sticker PDF",
+            initialdir=dialog_dir(STICKERS_DIR),
+            initialfile=f"stickers-{datetime.now():%Y%m%d-%H%M}.pdf",
             defaultextension=".pdf",
             filetypes=[("PDF Files", "*.pdf")]
         )

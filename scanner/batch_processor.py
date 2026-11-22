@@ -52,7 +52,9 @@ class BatchProcessor:
             else:
                 has_failures = True
 
-        status = "Completed" if not has_failures else "Completed with Warnings"
+        # DB only allows Pending/Processing/Completed/Failed. Per-page problems are kept
+        # on each document ("Needs Review") and surface in Manual Review.
+        status = "Failed" if (has_failures and not batch_results) else "Completed"
         self.sm.results.update_batch_status(batch.batch_id, status)
         batch.status = status
         return batch, batch_results

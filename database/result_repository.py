@@ -17,7 +17,9 @@ class ResultRepository:
     def create_batch(self, batch: ScanBatch):
         with self.db.get_connection() as conn:
             conn.execute(
-                "INSERT OR REPLACE INTO scan_batches (batch_id, source_file, total_pages, status) VALUES (?, ?, ?, ?)",
+                """INSERT INTO scan_batches (batch_id, source_file, total_pages, status) VALUES (?, ?, ?, ?)
+                   ON CONFLICT(batch_id) DO UPDATE SET source_file=excluded.source_file,
+                     total_pages=excluded.total_pages, status=excluded.status""",
                 (batch.batch_id, batch.source_file, batch.total_pages, batch.status)
             )
             conn.commit()
@@ -62,9 +64,15 @@ class ResultRepository:
     def save_scanned_document(self, doc: ScannedDocument):
         with self.db.get_connection() as conn:
             conn.execute(
-                """INSERT OR REPLACE INTO scanned_documents 
+                """INSERT INTO scanned_documents
                    (document_id, batch_id, page_number, document_type, barcode_value, processing_status, original_image_path, processed_image_path, warning_message)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(document_id) DO UPDATE SET batch_id=excluded.batch_id,
+                     page_number=excluded.page_number, document_type=excluded.document_type,
+                     barcode_value=excluded.barcode_value, processing_status=excluded.processing_status,
+                     original_image_path=excluded.original_image_path,
+                     processed_image_path=excluded.processed_image_path,
+                     warning_message=excluded.warning_message""",
                 (doc.document_id, doc.batch_id, doc.page_number, doc.document_type,
                  doc.barcode_value, doc.processing_status, doc.original_image_path,
                  doc.processed_image_path, doc.warning_message)

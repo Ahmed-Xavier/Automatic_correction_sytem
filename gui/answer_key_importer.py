@@ -6,6 +6,7 @@ from tkinter import ttk, messagebox, filedialog
 from pathlib import Path
 from typing import Optional
 
+from config.paths import ANSWER_KEYS_DIR, dialog_dir
 from gui.ui_utils import COLORS, FONTS, SectionHeader
 from database.repositories import ServiceManager
 from integrations.answer_key_importer import AnswerKeyImporter
@@ -115,6 +116,7 @@ class AnswerKeyPanel(tk.Frame):
     def _import_file(self):
         path = filedialog.askopenfilename(
             title="Select Answer Key Excel File",
+            initialdir=dialog_dir(ANSWER_KEYS_DIR),
             filetypes=[("Excel Files", "*.xlsx *.xls"), ("All Files", "*.*")]
         )
         if not path:

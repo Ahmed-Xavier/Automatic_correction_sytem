@@ -6,6 +6,8 @@ from tkinter import ttk, messagebox, filedialog
 from pathlib import Path
 from typing import Optional
 
+from datetime import datetime
+from config.paths import EXPORTS_DIR, dialog_dir
 from gui.ui_utils import COLORS, FONTS, SectionHeader
 from database.repositories import ServiceManager
 from exports.excel_exporter import ExcelExporter
@@ -125,6 +127,8 @@ class ResultsPanel(tk.Frame):
 
         path = filedialog.asksaveasfilename(
             title="Save Master Results Excel",
+            initialdir=dialog_dir(EXPORTS_DIR),
+            initialfile=f"master-results-{datetime.now():%Y%m%d-%H%M}.xlsx",
             defaultextension=".xlsx",
             filetypes=[("Excel Files", "*.xlsx")]
         )

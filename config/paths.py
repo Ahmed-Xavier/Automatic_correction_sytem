@@ -14,6 +14,7 @@ FAILED_DIR = DATA_DIR / "failed"
 EXPORTS_DIR = DATA_DIR / "exports"
 BARCODE_DIR = DATA_DIR / "barcode_database"
 ANSWER_KEYS_DIR = DATA_DIR / "answer_keys"
+STICKERS_DIR = DATA_DIR / "stickers"  # printable barcode sticker PDFs
 
 # Database path
 DEFAULT_DB_PATH = DATA_DIR / "examination.sqlite"
@@ -28,5 +29,13 @@ def ensure_directories():
         EXPORTS_DIR,
         BARCODE_DIR,
         ANSWER_KEYS_DIR,
+        STICKERS_DIR,
     ]:
         directory.mkdir(parents=True, exist_ok=True)
+
+
+def dialog_dir(directory: Path) -> str:
+    """Return a default folder for a Tkinter file dialog (created if missing)."""
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    return str(directory)

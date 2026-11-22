@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from pathlib import Path
 
+from config.paths import BARCODE_DIR, dialog_dir
 from gui.ui_utils import COLORS, FONTS, SectionHeader
 from database.repositories import ServiceManager
 from integrations.barcode_creator_importer import BarcodeImporter
@@ -86,6 +87,7 @@ class BarcodeManagerPanel(tk.Frame):
     def _import_file(self):
         path = filedialog.askopenfilename(
             title="Select Barcode Creator Excel File",
+            initialdir=dialog_dir(BARCODE_DIR),
             filetypes=[("Excel Files", "*.xlsx *.xls"), ("All Files", "*.*")]
         )
         if path:
@@ -93,7 +95,8 @@ class BarcodeManagerPanel(tk.Frame):
             self._show_import_result(count, warnings)
 
     def _import_folder(self):
-        path = filedialog.askdirectory(title="Select Folder Containing Barcode Excel Files")
+        path = filedialog.askdirectory(title="Select Folder Containing Barcode Excel Files",
+                                     initialdir=dialog_dir(BARCODE_DIR))
         if path:
             count, warnings = self.importer.import_directory(Path(path))
             self._show_import_result(count, warnings)

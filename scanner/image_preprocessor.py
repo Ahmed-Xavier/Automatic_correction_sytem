@@ -28,8 +28,8 @@ def estimate_and_deskew(img: np.ndarray) -> Tuple[np.ndarray, float]:
     angle = 0.0
     if lines is not None and len(lines) > 0:
         angles = []
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
+        for line in np.asarray(lines).reshape(-1, 4):  # works for (N,1,4) and (N,4)
+            x1, y1, x2, y2 = line
             if x2 != x1:
                 deg = np.degrees(np.arctan2(y2 - y1, x2 - x1))
                 # Consider near-horizontal lines

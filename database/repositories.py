@@ -16,9 +16,14 @@ class ExamRepository:
     def create_or_update(self, exam: Examination) -> bool:
         with self.db.get_connection() as conn:
             conn.execute(
-                """INSERT OR REPLACE INTO examinations
+                """INSERT INTO examinations
                    (exam_id, subject, exam_name, exam_type, maximum_score, exam_date, num_questions, status)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(exam_id) DO UPDATE SET
+                     subject=excluded.subject, exam_name=excluded.exam_name,
+                     exam_type=excluded.exam_type, maximum_score=excluded.maximum_score,
+                     exam_date=excluded.exam_date, num_questions=excluded.num_questions,
+                     status=excluded.status""",
                 (exam.exam_id, exam.subject, exam.exam_name, exam.exam_type,
                  exam.maximum_score, exam.exam_date, exam.num_questions, exam.status)
             )

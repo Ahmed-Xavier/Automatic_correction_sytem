@@ -88,9 +88,9 @@ class SettingsPanel(tk.Frame):
 
     def _browse(self, var: tk.StringVar, label: str):
         if "File" in label or "Database" in label:
-            path = filedialog.asksaveasfilename(initialfile=var.get())
+            path = filedialog.asksaveasfilename(initialdir=str(paths.DATA_DIR), initialfile=Path(var.get()).name)
         else:
-            path = filedialog.askdirectory(initialdir=var.get())
+            path = filedialog.askdirectory(initialdir=var.get() or str(paths.DATA_DIR))
         if path:
             var.set(path)
 

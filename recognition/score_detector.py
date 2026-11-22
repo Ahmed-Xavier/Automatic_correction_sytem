@@ -13,6 +13,12 @@ class ScoreDetector:
         self.dpi = dpi
         self.coords = get_score_bubble_coords(dpi=dpi)
 
+    def _threshold_block_size(self) -> int:
+        """Adaptive-threshold window: must be larger than a bubble (~4x radius) or the
+        solid centre of a filled bubble is treated as background and the mark is missed."""
+        from config.templates import BUBBLE_RADIUS_PT
+        return int(BUBBLE_RADIUS_PT * self.dpi / 72.0 * 4) | 1
+
     def detect(self, aligned_image: np.ndarray, max_score: float = 20.0) -> Dict[str, Any]:
         """
         Detects selected digits for the 4 numeric columns and reconstructs the grade.
@@ -32,7 +38,8 @@ class ScoreDetector:
 
         blur = cv2.GaussianBlur(gray, (5, 5), 0)
         binary = cv2.adaptiveThreshold(
-            blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, 10
+            blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,
+            self._threshold_block_size(), 10
         )
 
         column_results = {}

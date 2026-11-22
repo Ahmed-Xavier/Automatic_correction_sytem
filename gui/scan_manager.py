@@ -8,6 +8,7 @@ import threading
 import queue
 from typing import List
 
+from config.paths import SCANS_DIR, dialog_dir
 from gui.ui_utils import COLORS, FONTS, SectionHeader
 from database.repositories import ServiceManager
 from scanner.batch_processor import BatchProcessor
@@ -97,13 +98,15 @@ class ScanManagerPanel(tk.Frame):
         self._log_text.configure(yscrollcommand=log_sb.set)
 
     def _browse_folder(self):
-        path = filedialog.askdirectory(title="Select Scanner Input Folder")
+        path = filedialog.askdirectory(title="Select Scanner Input Folder",
+                                     initialdir=dialog_dir(SCANS_DIR))
         if path:
             self._folder_var.set(path)
 
     def _add_files(self):
         paths = filedialog.askopenfilenames(
             title="Select Scan Files",
+            initialdir=dialog_dir(SCANS_DIR),
             filetypes=[
                 ("Supported Files", "*.pdf *.png *.jpg *.jpeg *.tiff *.tif"),
                 ("All Files", "*.*")
@@ -114,7 +117,8 @@ class ScanManagerPanel(tk.Frame):
                 self._file_listbox.insert("end", p)
 
     def _add_folder(self):
-        path = filedialog.askdirectory(title="Select Folder with Scan Files")
+        path = filedialog.askdirectory(title="Select Folder with Scan Files",
+                                     initialdir=dialog_dir(SCANS_DIR))
         if not path:
             return
         exts = {".pdf", ".png", ".jpg", ".jpeg", ".tiff", ".tif"}

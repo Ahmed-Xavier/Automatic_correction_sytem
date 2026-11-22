@@ -12,6 +12,7 @@ from openpyxl.utils import get_column_letter
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from config.paths import ANSWER_KEYS_DIR, dialog_dir
 from gui.ui_utils import COLORS, FONTS, apply_theme, SectionHeader
 
 class AnswerKeyManagerApp:
@@ -208,6 +209,8 @@ class AnswerKeyManagerApp:
             return
         path = filedialog.asksaveasfilename(
             title="Save Answer Key Excel",
+            initialdir=dialog_dir(ANSWER_KEYS_DIR),
+            initialfile=f"{exam_id}-answer-key.xlsx",
             defaultextension=".xlsx",
             filetypes=[("Excel Files", "*.xlsx")]
         )

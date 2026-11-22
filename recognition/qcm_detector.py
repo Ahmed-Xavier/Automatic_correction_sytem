@@ -13,6 +13,12 @@ class QCMDetector:
         self.dpi = dpi
         self.bubble_coords = get_qcm_bubble_coords(dpi=dpi)
 
+    def _threshold_block_size(self) -> int:
+        """Adaptive-threshold window: must be larger than a bubble (~4x radius) or the
+        solid centre of a filled bubble is treated as background and the mark is missed."""
+        from config.templates import BUBBLE_RADIUS_PT
+        return int(BUBBLE_RADIUS_PT * self.dpi / 72.0 * 4) | 1
+
     def detect(self, aligned_image: np.ndarray) -> Dict[str, Any]:
         """
         Detects selected bubbles for all 40 questions.
@@ -37,7 +43,8 @@ class QCMDetector:
         # Use adaptive or local threshold to handle lighting / pencil vs pen
         blur = cv2.GaussianBlur(gray, (5, 5), 0)
         binary = cv2.adaptiveThreshold(
-            blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, 10
+            blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,
+            self._threshold_block_size(), 10
         )
 
         questions_result = {}

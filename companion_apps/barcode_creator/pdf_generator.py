@@ -92,7 +92,7 @@ def generate_barcode_pdf(
                 pymupdf.Point(x0 + 10, y1 - 4),
                 code,
                 fontsize=7,
-                fontname="couri",
+                fontname="cour",
                 color=(0.2, 0.2, 0.2)
             )
 
