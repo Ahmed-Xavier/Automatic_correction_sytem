@@ -49,35 +49,39 @@ def generate_barcode_pdf(
             x1 = x0 + sticker_w - 6.0
             y1 = y0 + sticker_h - 6.0
 
-            # Draw light sticker border
-            rect = pymupdf.Rect(x0, y0, x1, y1)
-            page.draw_rect(rect, color=(0.8, 0.8, 0.8), width=0.5)
-
             code = rec.get("full_barcode", "")
-            # Sticker holds the barcode only: no student name (identity lives in the Excel mapping)
+            name = rec.get("student_name", "Student")
+            sub = rec.get("subject", "")
 
-            # Generate barcode image
+            # Name stays on the paper, OUTSIDE the sticker box (above it)
+            page.insert_text(
+                pymupdf.Point(x0 + 2, y0 + 9),
+                f"{name} ({sub})",
+                fontsize=8,
+                fontname="helv",
+                color=(0.1, 0.1, 0.1)
+            )
+
+            # Sticker box (cut line): holds the barcode only, no name
+            box = pymupdf.Rect(x0, y0 + 14, x1, y1)
+            page.draw_rect(box, color=(0.6, 0.6, 0.6), width=0.5)
+
             try:
                 bc = zxingcpp.create_barcode(code, format=zxingcpp.BarcodeFormat.Code128)
                 zimg = zxingcpp.write_barcode_to_image(bc)
-                arr = np.array(zimg)
-                pil_img = Image.fromarray(arr)
+                pil_img = Image.fromarray(np.array(zimg))
                 img_bytes = io.BytesIO()
                 pil_img.save(img_bytes, format="PNG")
-                img_data = img_bytes.getvalue()
-
-                # Insert image into sticker rect
-                img_rect = pymupdf.Rect(x0 + 8, y0 + 8, x1 - 8, y1 - 16)
-                page.insert_image(img_rect, stream=img_data)
-            except Exception as e:
-                page.insert_text(
-                    pymupdf.Point(x0 + 8, y0 + 20),
-                    f"[Barcode Gen Error: {code}]",
-                    fontsize=7,
-                    color=(0.8, 0, 0)
+                page.insert_image(
+                    pymupdf.Rect(x0 + 8, y0 + 20, x1 - 8, y1 - 14),
+                    stream=img_bytes.getvalue()
                 )
+            except Exception:
+                page.insert_text(pymupdf.Point(x0 + 8, y0 + 35),
+                                 f"[Barcode Gen Error: {code}]",
+                                 fontsize=7, color=(0.8, 0, 0))
 
-            # Barcode text below barcode
+            # Human-readable code inside the box, under the barcode
             page.insert_text(
                 pymupdf.Point(x0 + 10, y1 - 4),
                 code,
