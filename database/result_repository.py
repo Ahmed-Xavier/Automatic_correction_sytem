@@ -12,6 +12,33 @@ from database.database import Database
 class ResultRepository:
     def __init__(self, db: Database):
         self.db = db
+        # Older databases only had a per-document uniqueness rule. Migrate
+        # existing duplicates before enforcing one result per student/exam.
+        with self.db.get_connection() as conn:
+            conn.execute(
+                """DELETE FROM results
+                   WHERE result_id NOT IN (
+                       SELECT MIN(result_id) FROM results GROUP BY student_id, exam_id
+                   )"""
+            )
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_results_student_exam "
+                "ON results(student_id, exam_id)"
+            )
+            conn.commit()
+
+    def clear_scan_data(self) -> Dict[str, int]:
+        """Delete scan history and results while preserving exam catalog data."""
+        tables = ("results", "scanned_documents", "scan_batches", "audit_logs")
+        with self.db.get_connection() as conn:
+            deleted = {
+                table: conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                for table in tables
+            }
+            for table in tables:
+                conn.execute(f"DELETE FROM {table}")
+            conn.commit()
+        return deleted
 
     # Batches
     def create_batch(self, batch: ScanBatch):
@@ -136,11 +163,31 @@ class ResultRepository:
             q_json = json.dumps(q_list)
 
         with self.db.get_connection() as conn:
+            existing = conn.execute(
+                "SELECT result_id, document_id FROM results WHERE student_id = ? AND exam_id = ?",
+                (res.student_id, res.exam_id),
+            ).fetchone()
+            if existing and existing["document_id"] != res.document_id:
+                raise ValueError(
+                    f"A result already exists for student {res.student_id} "
+                    f"in exam {res.exam_id} (document {existing['document_id']}). "
+                    "Reject or remove the existing result before accepting this scan."
+                )
+
             cur = conn.execute(
-                """INSERT OR REPLACE INTO results
+                """INSERT INTO results
                    (document_id, student_id, student_name, exam_id, subject, barcode_value, score, maximum_score,
                     correction_type, answer_key_version, review_status, question_results_json, manual_override, override_reason)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(document_id) DO UPDATE SET
+                     student_id=excluded.student_id, student_name=excluded.student_name,
+                     exam_id=excluded.exam_id, subject=excluded.subject,
+                     barcode_value=excluded.barcode_value, score=excluded.score,
+                     maximum_score=excluded.maximum_score, correction_type=excluded.correction_type,
+                     answer_key_version=excluded.answer_key_version,
+                     review_status=excluded.review_status,
+                     question_results_json=excluded.question_results_json,
+                     manual_override=excluded.manual_override, override_reason=excluded.override_reason""",
                 (res.document_id, res.student_id, res.student_name, res.exam_id, res.subject,
                  res.barcode_value, res.score, res.maximum_score, res.correction_type,
                  res.answer_key_version, res.review_status, q_json,

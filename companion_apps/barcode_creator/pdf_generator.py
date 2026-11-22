@@ -81,15 +81,6 @@ def generate_barcode_pdf(
                                  f"[Barcode Gen Error: {code}]",
                                  fontsize=7, color=(0.8, 0, 0))
 
-            # Human-readable code inside the box, under the barcode
-            page.insert_text(
-                pymupdf.Point(x0 + 10, y1 - 4),
-                code,
-                fontsize=7,
-                fontname="cour",
-                color=(0.2, 0.2, 0.2)
-            )
-
     out_file.parent.mkdir(parents=True, exist_ok=True)
     doc.save(str(out_file))
     doc.close()

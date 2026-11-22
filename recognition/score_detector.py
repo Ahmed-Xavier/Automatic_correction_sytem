@@ -87,9 +87,9 @@ class ScoreDetector:
                 needs_review = True
                 warnings.append(f"Uncertain mark in column '{col_name}'")
             else:
-                col_status = "Empty"
-                needs_review = True
-                warnings.append(f"Empty column '{col_name}'")
+                # An unmarked score column represents the digit zero.
+                selected_digit = 0
+                col_status = "Empty (assumed 0)"
 
             detected_digits[col_name] = selected_digit
             column_results[col_name] = {
@@ -103,7 +103,7 @@ class ScoreDetector:
                 cx, cy, r = digits_coords[digit]
                 pt = (int(round(cx)), int(round(cy)))
                 rad = int(round(r))
-                if digit == selected_digit:
+                if digit == selected_digit and col_status == "Valid":
                     cv2.circle(annotated, pt, rad + 3, (0, 200, 0), 2)
                 elif ratio >= BUBBLE_FILL_THRESHOLD or digit in ambig_digits:
                     cv2.circle(annotated, pt, rad + 3, (0, 165, 255), 2)

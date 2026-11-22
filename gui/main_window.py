@@ -6,12 +6,11 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Dict, Callable
 
-from gui.ui_utils import COLORS, FONTS, apply_theme, StatusBar
+from gui.ui_utils import COLORS, FONTS, apply_theme, StatusBar, size_window_to_screen
 from database.repositories import ServiceManager
 
 # Panel imports
 from gui.dashboard import DashboardPanel
-from gui.exam_manager import ExamManagerPanel
 from gui.barcode_manager import BarcodeManagerPanel
 from gui.answer_key_importer import AnswerKeyPanel
 from gui.scan_manager import ScanManagerPanel
@@ -21,7 +20,6 @@ from gui.settings_window import SettingsPanel
 
 SIDEBAR_ITEMS = [
     ("dashboard",       "🏠  Dashboard"),
-    ("exams",           "📋  Examinations"),
     ("barcode_import",  "🏷️   Barcode Database"),
     ("answer_key",      "🔑  Answer Keys"),
     ("scan_processing", "🖨️   Scan Processing"),
@@ -35,9 +33,6 @@ class MainWindow:
         self.sm = service_manager
         self.root = tk.Tk()
         self.root.title("Examination Correction System")
-        self.root.geometry("1280x820")
-        self.root.minsize(1024, 680)
-
         apply_theme(self.root)
         self.root.configure(bg=COLORS["bg"])
 
@@ -47,6 +42,8 @@ class MainWindow:
 
         self._build_ui()
         self.navigate("dashboard")
+        self.root.minsize(900, 600)
+        size_window_to_screen(self.root)
 
     # ------------------------------------------------------------------
     def _build_ui(self):
@@ -102,7 +99,6 @@ class MainWindow:
 
         # Lazy-build all panels
         self._panels["dashboard"]       = DashboardPanel(self._content, self.sm, self.navigate)
-        self._panels["exams"]           = ExamManagerPanel(self._content, self.sm)
         self._panels["barcode_import"]  = BarcodeManagerPanel(self._content, self.sm)
         self._panels["answer_key"]      = AnswerKeyPanel(self._content, self.sm)
         self._panels["scan_processing"] = ScanManagerPanel(self._content, self.sm)

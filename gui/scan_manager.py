@@ -8,7 +8,7 @@ import threading
 import queue
 from typing import List
 
-from config.paths import SCANS_DIR, dialog_dir
+from config.paths import SCANS_DIR, PROCESSED_DIR, FAILED_DIR, EXPORTS_DIR, DATA_DIR, dialog_dir
 from gui.ui_utils import COLORS, FONTS, SectionHeader
 from database.repositories import ServiceManager
 from scanner.batch_processor import BatchProcessor
@@ -53,6 +53,8 @@ class ScanManagerPanel(tk.Frame):
                    command=self._add_folder).pack(side="left", padx=4)
         ttk.Button(row2, text="🗑️ Clear List",
                    command=self._clear_files).pack(side="left", padx=4)
+        ttk.Button(row2, text="Reset Scan Data",
+                   command=self._reset_scan_data).pack(side="right", padx=4)
         ttk.Button(row2, text="▶  Start Processing",
                    command=self._start_processing, style="Accent.TButton").pack(side="right", padx=4)
 
@@ -129,6 +131,80 @@ class ScanManagerPanel(tk.Frame):
 
     def _clear_files(self):
         self._file_listbox.delete(0, "end")
+
+    def _reset_scan_data(self):
+        if self._processing:
+            messagebox.showinfo("Processing", "Wait for the current scan batch to finish before resetting scan data.")
+            return
+
+        confirmed = messagebox.askyesno(
+            "Reset Scan Data",
+            "Delete all saved results, scan batches, extracted pages, annotated images, failed files, and result exports?\n\n"
+            "This also clears the current file list. Exams, students, barcodes, answer keys, sticker PDFs, and source scan PDFs are kept."
+        )
+        if not confirmed:
+            return
+
+        data_root = DATA_DIR.resolve()
+        cleanup_dirs = (
+            SCANS_DIR / "extracted_pages",
+            PROCESSED_DIR / "annotated",
+            FAILED_DIR,
+            EXPORTS_DIR,
+        )
+        try:
+            for directory in cleanup_dirs:
+                resolved = directory.resolve()
+                if not resolved.is_relative_to(data_root):
+                    raise ValueError(f"Refusing to clear a folder outside the data directory: {resolved}")
+                directory.mkdir(parents=True, exist_ok=True)
+
+            locked_items = []
+            for directory in cleanup_dirs:
+                locked_items.extend(self._clear_directory_contents(directory))
+
+            deleted = self.sm.results.clear_scan_data()
+            self._clear_files()
+            self._progress_bar.config(value=0, maximum=1)
+            for value in self._stat_labels.values():
+                value.set("—")
+            self._log_text.config(state="normal")
+            self._log_text.delete("1.0", "end")
+            self._log_text.config(state="disabled")
+            summary = (
+                "Scan data cleared. Exams, students, barcode mappings, and answer keys were preserved.\n\n"
+                f"Deleted {deleted['results']} results, {deleted['scan_batches']} batches, and "
+                f"{deleted['scanned_documents']} scanned pages."
+            )
+            if locked_items:
+                remaining = "\n".join(str(path) for path in locked_items[:8])
+                if len(locked_items) > 8:
+                    remaining += f"\n…and {len(locked_items) - 8} more"
+                messagebox.showwarning(
+                    "Reset Mostly Complete",
+                    f"{summary}\n\nThese files are still open or locked. Close them and run reset again to remove them:\n{remaining}"
+                )
+            else:
+                messagebox.showinfo("Reset Complete", summary)
+        except Exception as e:
+            messagebox.showerror("Reset Failed", f"Could not finish clearing scan data:\n{e}")
+
+    @classmethod
+    def _clear_directory_contents(cls, directory: Path) -> List[Path]:
+        locked = []
+        for item in directory.iterdir():
+            if item.is_dir() and not item.is_symlink():
+                locked.extend(cls._clear_directory_contents(item))
+                try:
+                    item.rmdir()
+                except OSError:
+                    locked.append(item)
+            else:
+                try:
+                    item.unlink()
+                except OSError:
+                    locked.append(item)
+        return locked
 
     def _start_processing(self):
         if self._processing:

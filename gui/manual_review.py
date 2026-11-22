@@ -188,15 +188,31 @@ class ManualReviewPanel(tk.Frame):
 
         self._action_msg.config(text="")
 
-        # Load image
-        img_path = doc.processed_image_path or doc.original_image_path
-        if img_path and Path(img_path).exists():
+        # Prefer the annotated preview, but fall back to the saved scan if the
+        # preview was not written or its cache was cleared.
+        self._canvas.delete("all")
+        img_path = next(
+            (path for path in (doc.processed_image_path, doc.original_image_path)
+             if path and Path(path).is_file()),
+            None
+        )
+        if img_path:
             self._load_image(img_path)
+        else:
+            self._canvas.create_text(
+                190, 240, text="No saved image is available for this document.",
+                fill="white", width=340, font=FONTS["body"]
+            )
 
     def _load_image(self, path: str):
         try:
             img = cv2.imread(path)
             if img is None:
+                self._canvas.delete("all")
+                self._canvas.create_text(
+                    190, 240, text=f"Could not read scan image:\n{path}",
+                    fill="white", width=340, font=FONTS["small"]
+                )
                 return
             img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             pil_img = Image.fromarray(img_rgb)
@@ -209,8 +225,9 @@ class ManualReviewPanel(tk.Frame):
             self._canvas.create_image(canvas_w // 2, canvas_h // 2,
                                        image=self._photo_ref, anchor="center")
         except Exception as e:
+            self._canvas.delete("all")
             self._canvas.create_text(190, 240, text=f"Image load error:\n{e}",
-                                      fill="red", font=FONTS["small"])
+                                      fill="white", font=FONTS["small"])
 
     def _confirm_result(self):
         if not self._current_result or not self._current_doc:
@@ -226,6 +243,7 @@ class ManualReviewPanel(tk.Frame):
             self.refresh()
         except Exception as e:
             self._action_msg.config(text=f"❌ Error: {e}", fg=COLORS["danger"])
+            messagebox.showwarning("Duplicate Result", str(e))
 
     def _save_override(self):
         if not self._current_result or not self._current_doc:
@@ -248,6 +266,7 @@ class ManualReviewPanel(tk.Frame):
             self._action_msg.config(text="❌ Invalid score value", fg=COLORS["danger"])
         except Exception as e:
             self._action_msg.config(text=f"❌ Error: {e}", fg=COLORS["danger"])
+            messagebox.showwarning("Duplicate Result", str(e))
 
     def _reject_document(self):
         if not self._current_doc:

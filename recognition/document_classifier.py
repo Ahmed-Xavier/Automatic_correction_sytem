@@ -20,6 +20,18 @@ class DocumentClassifier:
         h, w = aligned_image.shape[:2]
         gray = cv2.cvtColor(aligned_image, cv2.COLOR_BGR2GRAY) if len(aligned_image.shape) == 3 else aligned_image
 
+        # The score sheet has a tall left header box with a vertical divider at
+        # x=115.65 pt. QCM has no divider there (its short header divider is at
+        # x=66.99 pt). This canonical template cue is more reliable than bubble
+        # density, which can be distorted by completed marks.
+        header_y0 = int(round(34.0 * self.scale))
+        header_y1 = int(round(162.0 * self.scale))
+        score_header_x = int(round(115.65 * self.scale))
+        if header_y1 <= h and score_header_x < w:
+            divider_ink = gray[header_y0:header_y1, score_header_x:score_header_x + 1] < 160
+            if divider_ink.size and float(np.mean(divider_ink)) > 0.75:
+                return "Score Sheet", 0.99
+
         # 1. Text hint if provided (e.g. from PDF text or OCR)
         lower_text = detected_text.lower()
         if "qcm" in lower_text:
@@ -46,8 +58,7 @@ class DocumentClassifier:
 
         num_horiz_lines = 0
         if lines is not None:
-            for l in lines:
-                x1, y1, x2, y2 = l[0]
+            for x1, y1, x2, y2 in np.asarray(lines).reshape(-1, 4):
                 if abs(y2 - y1) <= 3:
                     num_horiz_lines += 1
 
@@ -58,7 +69,10 @@ class DocumentClassifier:
         _, bin_bubbles = cv2.threshold(roi_bubbles, 200, 255, cv2.THRESH_BINARY_INV)
         col_proj = np.sum(bin_bubbles > 0, axis=0)
         peaks = (col_proj > np.mean(col_proj) * 1.5).astype(np.uint8)
-        num_peaks, _ = cv2.connectedComponents(peaks)
+        # Count runs in this 1-D mask directly. OpenCV builds differ in the
+        # return value exposed by connectedComponents for a 1-D input.
+        padded_peaks = np.pad(peaks.astype(np.int16), (1, 1))
+        num_peaks = int(np.count_nonzero(np.diff(padded_peaks) == 1))
 
         if num_peaks >= 8:
             return "QCM", 0.95

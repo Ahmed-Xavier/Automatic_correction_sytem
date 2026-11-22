@@ -52,6 +52,9 @@ class BarcodeImporter:
             student_name = get_val("student_name")
             subject = get_val("subject") or "General"
             exam_id = get_val("exam_id") or f"{subject.upper()}-EXAM"
+            exam_type = get_val("exam_type") or "QCM"
+            if exam_type not in {"QCM", "Written"}:
+                exam_type = "QCM"
             barcode_id = get_val("barcode_id")
             full_barcode = get_val("full_barcode") or barcode_id
             student_id = get_val("student_id")
@@ -82,6 +85,7 @@ class BarcodeImporter:
                 exam_id=exam_id,
                 subject=subject,
                 source_file=path.name,
+                exam_type=exam_type,
             )
 
             try:

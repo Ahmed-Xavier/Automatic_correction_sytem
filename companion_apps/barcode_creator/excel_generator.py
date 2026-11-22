@@ -21,7 +21,7 @@ def generate_barcode_excel(
     ws = wb.active
     ws.title = "Barcode Mappings"
 
-    headers = ["Student Name", "Subject", "Exam ID", "Barcode ID", "Full Barcode", "Student ID"]
+    headers = ["Student Name", "Subject", "Exam ID", "Barcode ID", "Full Barcode", "Student ID", "Exam Type"]
     ws.append(headers)
 
     header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
@@ -40,7 +40,8 @@ def generate_barcode_excel(
             r.get("exam_id", ""),
             r.get("barcode_id", ""),
             r.get("full_barcode", ""),
-            r.get("student_id", "")
+            r.get("student_id", ""),
+            r.get("exam_type", "QCM")
         ])
 
     for col in ws.columns:

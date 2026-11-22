@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from config.paths import BARCODE_DIR, STICKERS_DIR, dialog_dir
-from gui.ui_utils import COLORS, FONTS, apply_theme, SectionHeader
+from gui.ui_utils import COLORS, FONTS, apply_theme, SectionHeader, size_window_to_screen
 from companion_apps.barcode_creator.excel_generator import generate_barcode_excel
 from companion_apps.barcode_creator.pdf_generator import generate_barcode_pdf
 
@@ -22,11 +22,12 @@ class BarCodeCreatorApp:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Student Barcode Creator")
-        self.root.geometry("900x680")
         apply_theme(self.root)
         self.root.configure(bg=COLORS["bg"])
+        self.root.minsize(900, 650)
         self._students: list = []
         self._build()
+        size_window_to_screen(self.root)
 
     def _build(self):
         SectionHeader(self.root, "Student Barcode Creator",
@@ -42,12 +43,10 @@ class BarCodeCreatorApp:
         row = tk.Frame(info_frame, bg=COLORS["bg"])
         row.pack(fill="x", padx=8, pady=10)
 
-        for label, attr in [("Subject:", "_subject_var"), ("Exam ID:", "_exam_id_var")]:
-            tk.Label(row, text=label, bg=COLORS["bg"], font=FONTS["body"],
-                     fg=COLORS["text_secondary"]).pack(side="left", padx=4)
-            var = tk.StringVar()
-            setattr(self, attr, var)
-            ttk.Entry(row, textvariable=var, width=20).pack(side="left", padx=4)
+        tk.Label(row, text="Subject:", bg=COLORS["bg"], font=FONTS["body"],
+                 fg=COLORS["text_secondary"]).pack(side="left", padx=4)
+        self._subject_var = tk.StringVar()
+        ttk.Entry(row, textvariable=self._subject_var, width=30).pack(side="left", padx=4)
 
         # Student input
         input_frame = tk.LabelFrame(self.root, text="  Add Students  ",
@@ -76,35 +75,38 @@ class BarCodeCreatorApp:
 
         # Student list
         cols = ("Student Name", "Student ID", "Barcode ID", "Full Barcode")
-        self._tree = ttk.Treeview(self.root, columns=cols, show="headings", height=12)
+        list_area = tk.Frame(self.root, bg=COLORS["bg"])
+        list_area.pack(fill="both", expand=True, padx=24, pady=8)
+
+        self._tree = ttk.Treeview(list_area, columns=cols, show="headings", height=12)
         for col in cols:
             self._tree.heading(col, text=col)
             self._tree.column(col, width=200, anchor="w")
 
-        vsb = ttk.Scrollbar(self.root, orient="vertical", command=self._tree.yview)
-        self._tree.configure(yscrollcommand=vsb.set)
-        self._tree.pack(side="left", fill="both", expand=True, padx=(24, 0), pady=8)
-        vsb.pack(side="left", fill="y", pady=8)
+        action_frame = tk.Frame(list_area, bg=COLORS["bg"], width=260)
+        action_frame.pack(side="right", fill="y", padx=(12, 0))
+        action_frame.pack_propagate(False)
 
-        # Action buttons on right
-        action_frame = tk.Frame(self.root, bg=COLORS["bg"])
-        action_frame.pack(side="left", fill="y", padx=12, pady=8)
-
-        ttk.Button(action_frame, text="🗑️ Remove Selected",
+        ttk.Button(action_frame, text="Remove Selected",
                    command=self._remove_selected).pack(fill="x", pady=4)
-        ttk.Button(action_frame, text="🧹 Clear All",
+        ttk.Button(action_frame, text="Clear All",
                    command=self._clear_all).pack(fill="x", pady=4)
 
         tk.Frame(action_frame, bg=COLORS["card_border"], height=1).pack(fill="x", pady=12)
 
-        ttk.Button(action_frame, text="📊 Generate Excel",
+        ttk.Button(action_frame, text="Generate Excel",
                    command=self._generate_excel, style="Accent.TButton").pack(fill="x", pady=4)
-        ttk.Button(action_frame, text="🖨️ Generate PDF Stickers",
+        ttk.Button(action_frame, text="Generate PDF Stickers",
                    command=self._generate_pdf, style="Accent.TButton").pack(fill="x", pady=4)
 
         self._status_lbl = tk.Label(action_frame, text="", bg=COLORS["bg"],
-                                     font=FONTS["small"], wraplength=150)
+                                     font=FONTS["small"], wraplength=240)
         self._status_lbl.pack(pady=8)
+
+        vsb = ttk.Scrollbar(list_area, orient="vertical", command=self._tree.yview)
+        self._tree.configure(yscrollcommand=vsb.set)
+        vsb.pack(side="right", fill="y")
+        self._tree.pack(side="left", fill="both", expand=True)
 
     def _make_barcode_id(self) -> str:
         return uuid.uuid4().hex[:8].upper()
@@ -115,7 +117,7 @@ class BarCodeCreatorApp:
             messagebox.showwarning("Missing Name", "Please enter a student name.")
             return
         subject = self._subject_var.get().strip() or "GENERAL"
-        exam_id = self._exam_id_var.get().strip() or f"{subject.upper()}-EXAM"
+        exam_id = f"{subject.upper()}-EXAM"
         barcode_id = self._make_barcode_id()
         full_barcode = f"{subject.upper()}-{barcode_id}"
         student_id = self._sid_var.get().strip() or f"STU-{barcode_id}"

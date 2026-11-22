@@ -1,0 +1,10 @@
+Generated OMR sample set
+
+QCM uses the the six MATH barcodes from data/barcode_database/math.xlsx and the MATH-EXAM answer key.
+demo_qcm_normal.pdf: three pages with one filled option for each of 40 questions. Answers are randomized (fixed seed for repeatability).
+demo_qcm_unclear.pdf: three pages with randomized answers plus intentionally blank questions, an unclear changed answer, a weak partial mark, and a double-marked question.
+
+Score-only subject: HISTORY (exam ID HISTORY-EXAM, type Written, maximum 20). Import data/barcode_database/history.xlsx before processing these sheets; no answer key is needed.
+demo_score_normal.pdf: three randomized valid numeric scores, each with one filled digit in each score column.
+demo_score_unclear.pdf: page 1 leaves a column blank (treated as zero), page 2 has multiple unit digits, and page 3 has an unclear changed tenths digit.
+The PDFs are generated from the provided blank templates. Original templates are unchanged.

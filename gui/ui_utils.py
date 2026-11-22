@@ -92,6 +92,18 @@ def apply_theme(root: tk.Tk):
     style.configure("TNotebook.Tab", font=FONTS["body"], padding=(12, 6))
 
 
+def size_window_to_screen(window, max_width: int = 1500, max_height: int = 900):
+    """Open a Tk window large enough to use the screen while keeping taskbar visible."""
+    window.update_idletasks()
+    screen_w = window.winfo_screenwidth()
+    screen_h = window.winfo_screenheight()
+    width = max(800, min(max_width, screen_w - 20))
+    height = max(600, min(max_height, screen_h - 70))
+    x = max(0, (screen_w - width) // 2)
+    y = max(0, (screen_h - height) // 2)
+    window.geometry(f"{width}x{height}+{x}+{y}")
+
+
 def make_separator(parent, **grid_kwargs):
     sep = ttk.Separator(parent, orient="horizontal")
     sep.grid(**grid_kwargs)

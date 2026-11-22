@@ -27,7 +27,6 @@ class DashboardPanel(tk.Frame):
 
         self._stat_cards: Dict[str, StatCard] = {}
         stat_defs = [
-            ("total_exams",      "Examinations",       COLORS["accent"]),
             ("total_students",   "Students",           COLORS["success"]),
             ("total_barcodes",   "Barcode Mappings",   COLORS["accent"]),
             ("total_answer_keys","Answer Keys",        COLORS["accent"]),
@@ -54,7 +53,6 @@ class DashboardPanel(tk.Frame):
         actions = [
             ("📂  Import Barcode File",   lambda: self.on_navigate("barcode_import")),
             ("🔑  Import Answer Key",     lambda: self.on_navigate("answer_key")),
-            ("📋  Manage Examinations",   lambda: self.on_navigate("exams")),
             ("🖨️  Process Scans",          lambda: self.on_navigate("scan_processing")),
             ("🔍  Manual Review",          lambda: self.on_navigate("manual_review")),
             ("📊  Export Results",         lambda: self.on_navigate("results")),

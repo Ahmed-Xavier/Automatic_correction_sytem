@@ -13,13 +13,12 @@ from openpyxl.utils import get_column_letter
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from config.paths import ANSWER_KEYS_DIR, dialog_dir
-from gui.ui_utils import COLORS, FONTS, apply_theme, SectionHeader
+from gui.ui_utils import COLORS, FONTS, apply_theme, SectionHeader, size_window_to_screen
 
 class AnswerKeyManagerApp:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Answer Key Manager")
-        self.root.geometry("980x740")
         apply_theme(self.root)
         self.root.configure(bg=COLORS["bg"])
         self._answers: dict = {}  # q_num -> selected option
@@ -27,6 +26,7 @@ class AnswerKeyManagerApp:
         self._options = ["A", "B", "C"]
         self._option_buttons: dict = {}  # (q_num, opt) -> tk.Button
         self._build()
+        size_window_to_screen(self.root)
 
     def _build(self):
         SectionHeader(self.root, "Answer Key Manager",
@@ -43,7 +43,6 @@ class AnswerKeyManagerApp:
         cfg_row.pack(fill="x", padx=8, pady=10)
 
         cfg_items = [
-            ("Exam ID:", "_exam_id_var"),
             ("Subject:", "_subject_var"),
             ("Exam Name:", "_exam_name_var"),
         ]
@@ -171,13 +170,11 @@ class AnswerKeyManagerApp:
     def _preview(self):
         win = tk.Toplevel(self.root)
         win.title("Answer Key Preview")
-        win.geometry("560x420")
         win.configure(bg=COLORS["bg"])
         txt = tk.Text(win, font=FONTS["mono"], bg="#F9FAFB",
                       fg=COLORS["text_primary"], padx=12, pady=8)
         txt.pack(fill="both", expand=True, padx=12, pady=12)
         txt.insert("end",
-            f"Exam ID: {self._exam_id_var.get() or '—'}   "
             f"Subject: {self._subject_var.get() or '—'}\n"
             f"Questions: {self._num_questions}   "
             f"Max Score: {self._max_score_var.get()}\n"
@@ -197,20 +194,21 @@ class AnswerKeyManagerApp:
         if unanswered:
             txt.insert("end", f"\n⚠️  Unanswered questions: {unanswered}\n")
         txt.config(state="disabled")
+        size_window_to_screen(win)
 
     def _export_excel(self):
-        exam_id = self._exam_id_var.get().strip()
         subject = self._subject_var.get().strip()
-        if not exam_id or not subject:
-            messagebox.showwarning("Missing Info", "Please fill in Exam ID and Subject first.")
+        if not subject:
+            messagebox.showwarning("Missing Info", "Please fill in the Subject first.")
             return
+        exam_id = f"{subject.upper()}-EXAM"
         if not self._answers:
             messagebox.showwarning("No Answers", "Please select correct answers first.")
             return
         path = filedialog.asksaveasfilename(
             title="Save Answer Key Excel",
             initialdir=dialog_dir(ANSWER_KEYS_DIR),
-            initialfile=f"{exam_id}-answer-key.xlsx",
+            initialfile=f"{subject.strip().replace(' ', '-')}-answer-key.xlsx",
             defaultextension=".xlsx",
             filetypes=[("Excel Files", "*.xlsx")]
         )

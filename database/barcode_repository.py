@@ -21,8 +21,9 @@ class BarcodeRepository:
             # Ensure exam exists (or insert minimal placeholder if exam is not registered yet)
             conn.execute(
                 "INSERT OR IGNORE INTO examinations (exam_id, subject, exam_name, exam_type, maximum_score) "
-                "VALUES (?, ?, ?, 'QCM', 20.0)",
-                (mapping.exam_id, mapping.subject, f"{mapping.subject} Exam ({mapping.exam_id})")
+                "VALUES (?, ?, ?, ?, 20.0)",
+                (mapping.exam_id, mapping.subject,
+                 f"{mapping.subject} Exam ({mapping.exam_id})", mapping.exam_type)
             )
             # Insert or replace barcode mapping
             conn.execute(

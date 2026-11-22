@@ -61,6 +61,7 @@ class FileIngestion:
         self.result_repo.create_batch(batch)
 
         extracted_docs = []
+        self.pages_dir.mkdir(parents=True, exist_ok=True)
         for idx, img in enumerate(images, start=1):
             doc_id = f"{batch_id}_P{idx:03d}"
             page_save_path = self.pages_dir / f"{doc_id}.png"

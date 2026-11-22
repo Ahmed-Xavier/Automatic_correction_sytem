@@ -73,11 +73,6 @@ class ExamRepository:
                 for row in cur.fetchall()
             ]
 
-    def count(self) -> int:
-        with self.db.get_connection() as conn:
-            return conn.execute("SELECT COUNT(*) FROM examinations").fetchone()[0]
-
-
 class StudentRepository:
     def __init__(self, db: Database):
         self.db = db
@@ -111,7 +106,6 @@ class ServiceManager:
 
     def get_dashboard_stats(self) -> Dict[str, Any]:
         return {
-            "total_exams": self.exams.count(),
             "total_students": self.students.count(),
             "total_barcodes": self.barcodes.count(),
             "total_answer_keys": self.answer_keys.count(),

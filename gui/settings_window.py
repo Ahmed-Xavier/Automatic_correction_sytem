@@ -101,7 +101,6 @@ class SettingsPanel(tk.Frame):
             self._db_info_text.delete("1.0", "end")
             self._db_info_text.insert("end",
                 f"Students: {stats['total_students']}    "
-                f"Examinations: {stats['total_exams']}    "
                 f"Barcode Mappings: {stats['total_barcodes']}\n"
                 f"Answer Keys: {stats['total_answer_keys']}    "
                 f"Total Results: {stats['total_results']}    "

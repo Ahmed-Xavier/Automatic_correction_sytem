@@ -1132,8 +1132,6 @@ Provide quick actions:
 
 \- Import answer-key workbook.
 
-\- Create examination.
-
 \- Start scan processing.
 
 \- Open manual review.
@@ -1142,61 +1140,9 @@ Provide quick actions:
 
 
 
-\## 6.2 Examination Manager
+\## 6.2 Examination Records
 
-
-
-Allow the user to create and manage examinations.
-
-
-
-Fields:
-
-
-
-| Field | Description |
-
-|---|---|
-
-| Exam ID | Unique examination identifier |
-
-| Subject | Subject name |
-
-| Exam Name | Descriptive name |
-
-| Exam Type | QCM or Written |
-
-| Maximum Score | Maximum grade |
-
-| Date | Examination date |
-
-| Number of Questions | Required for QCM |
-
-| Status | Draft, Active, Archived |
-
-
-
-Requirements:
-
-
-
-\- Create examinations.
-
-\- Edit examination information.
-
-\- Archive examinations.
-
-\- Search and filter.
-
-\- Detect duplicate Exam IDs.
-
-\- Associate examinations with barcode mappings.
-
-\- Associate QCM examinations with answer keys.
-
-
-
-For written examinations, no answer key is required.
+The main app has no separate examination management page. It creates or updates its internal examination records when barcode mappings or answer keys are imported. The matching Exam ID connects student barcodes, answer keys, score limits, and results. For written examinations, no answer key is required.
 
 
 

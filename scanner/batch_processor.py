@@ -89,6 +89,7 @@ class BatchProcessor:
         )
 
         annotated_path = self.annotated_dir / f"{doc.document_id}_annotated.png"
+        self.annotated_dir.mkdir(parents=True, exist_ok=True)
 
         result = None
         needs_review = not valid_pre

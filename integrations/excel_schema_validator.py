@@ -37,6 +37,7 @@ def validate_barcode_workbook(wb: openpyxl.Workbook) -> Tuple[bool, str, Dict[st
         "barcode_id": find_column_index(headers, ["barcode id", "barcode_id", "id_barcode"]),
         "full_barcode": find_column_index(headers, ["full barcode", "full_barcode", "barcode", "barcode_value", "code_barre"]),
         "student_id": find_column_index(headers, ["student id", "student_id", "matricule", "id_student"]),
+        "exam_type": find_column_index(headers, ["exam type", "exam_type", "type"]),
     }
 
     # Minimum required: full_barcode and student_name

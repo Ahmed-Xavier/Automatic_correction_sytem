@@ -32,6 +32,7 @@ class BarcodeMapping:
     exam_id: str
     subject: str
     source_file: str
+    exam_type: str = "QCM"
     created_at: Optional[str] = None
 
 @dataclass
