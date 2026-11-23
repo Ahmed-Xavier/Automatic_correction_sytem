@@ -34,7 +34,7 @@ class BarcodeManagerPanel(tk.Frame):
 
         ttk.Button(btn_row, text="📄 Import File",
                    command=self._import_file, style="Accent.TButton").pack(side="left", padx=4)
-        ttk.Button(btn_row, text="📂 Import Folder",
+        ttk.Button(btn_row, text="📂 Sync Folder",
                    command=self._import_folder).pack(side="left", padx=4)
         ttk.Button(btn_row, text="🔄 Refresh",
                    command=self.refresh).pack(side="right", padx=4)
@@ -98,7 +98,15 @@ class BarcodeManagerPanel(tk.Frame):
         path = filedialog.askdirectory(title="Select Folder Containing Barcode Excel Files",
                                      initialdir=dialog_dir(BARCODE_DIR))
         if path:
-            count, warnings = self.importer.import_directory(Path(path))
+            if not messagebox.askyesno(
+                "Sync Barcode Folder",
+                "Import the .xlsx workbooks in this folder and remove mappings whose source workbook is no longer here?\n\n"
+                "Mappings from other workbook files will be removed from the barcode database."
+            ):
+                return
+            count, warnings = self.importer.import_directory(
+                Path(path), sync_removed_sources=True
+            )
             self._show_import_result(count, warnings)
 
     def _show_import_result(self, count: int, warnings: list):

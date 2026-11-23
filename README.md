@@ -45,7 +45,7 @@ Written score sheets do not need an answer key. Their exam maximum score is used
 
 Launch `main_run.bat`.
 
-1. Open **Barcode Database** and import the workbook from Barcode Creator.
+1. Open **Barcode Database** and import the workbook from Barcode Creator. Use **Sync Folder** when you want the database to match all workbooks currently in a folder; mappings from workbook files no longer in that folder are removed after confirmation.
 2. For QCM exams, open **Answer Keys** and import the Answer Key Manager workbook.
 3. Verify the barcode mappings and answer key were imported before scanning.
 

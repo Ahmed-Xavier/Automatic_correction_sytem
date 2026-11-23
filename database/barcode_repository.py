@@ -86,3 +86,17 @@ class BarcodeRepository:
     def count(self) -> int:
         with self.db.get_connection() as conn:
             return conn.execute("SELECT COUNT(*) FROM barcode_mappings").fetchone()[0]
+
+    def remove_mappings_from_missing_sources(self, source_files: set[str]) -> int:
+        """Remove mappings imported from workbooks no longer in a synced folder."""
+        if not source_files:
+            return 0
+        placeholders = ",".join("?" for _ in source_files)
+        with self.db.get_connection() as conn:
+            cur = conn.execute(
+                f"DELETE FROM barcode_mappings WHERE source_file IS NOT NULL "
+                f"AND source_file NOT IN ({placeholders})",
+                tuple(sorted(source_files)),
+            )
+            conn.commit()
+            return cur.rowcount

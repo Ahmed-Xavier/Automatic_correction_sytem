@@ -5,6 +5,8 @@ bubble evaluation, scoring, validation, and storage.
 """
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
+from concurrent.futures import ThreadPoolExecutor
+import threading
 import cv2
 import numpy as np
 
@@ -22,6 +24,8 @@ from correction.score_reader import ScoreReader
 from correction.validation import DocumentValidator
 from config.paths import PROCESSED_DIR, ensure_directories
 
+MAX_PARALLEL_PAGES = 2
+
 class BatchProcessor:
     def __init__(self, service_manager: ServiceManager, dpi: float = 300.0):
         self.sm = service_manager
@@ -31,7 +35,9 @@ class BatchProcessor:
         self.annotated_dir.mkdir(parents=True, exist_ok=True)
 
         self.ingestion = FileIngestion(self.sm.results)
-        self.barcode_reader = BarcodeReader()
+        # BarcodeDetector instances are kept per worker thread; OpenCV detector
+        # objects are not shared across concurrent page tasks.
+        self._worker_local = threading.local()
         self.aligner = ImageAligner(dpi=dpi)
         self.classifier = DocumentClassifier(dpi=dpi)
         self.qcm_detector = QCMDetector(dpi=dpi)
@@ -45,12 +51,17 @@ class BatchProcessor:
         batch_results: List[ExamResult] = []
 
         has_failures = False
-        for doc, raw_img in extracted_docs:
-            res = self.process_page(doc, raw_img)
-            if res:
-                batch_results.append(res)
-            else:
-                has_failures = True
+        worker_count = min(MAX_PARALLEL_PAGES, max(1, len(extracted_docs)))
+        with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="scan-page") as pool:
+            page_results = pool.map(self._process_page_safely, extracted_docs)
+            for (doc, _), (res, error) in zip(extracted_docs, page_results):
+                if error is not None:
+                    has_failures = True
+                    continue
+                if res:
+                    batch_results.append(res)
+                else:
+                    has_failures = True
 
         # DB only allows Pending/Processing/Completed/Failed. Per-page problems are kept
         # on each document ("Needs Review") and surface in Manual Review.
@@ -59,10 +70,28 @@ class BatchProcessor:
         batch.status = status
         return batch, batch_results
 
+    def _process_page_safely(
+        self, page: Tuple[ScannedDocument, np.ndarray]
+    ) -> Tuple[Optional[ExamResult], Optional[Exception]]:
+        """Process a page independently so one page error does not stop its batch."""
+        doc, raw_img = page
+        try:
+            return self.process_page(doc, raw_img), None
+        except Exception as exc:
+            doc.processing_status = "Needs Review"
+            doc.warning_message = f"Page processing error: {exc}"
+            self.sm.results.save_scanned_document(doc)
+            return None, exc
+
     def process_page(self, doc: ScannedDocument, raw_img: np.ndarray) -> Optional[ExamResult]:
         """Processes a single page from a batch."""
         # 1. Barcode reading (prior to or alongside alignment)
-        barcode_val = self.barcode_reader.read_barcode(raw_img)
+        barcode_reader = getattr(self._worker_local, "barcode_reader", None)
+        if barcode_reader is None:
+            barcode_reader = BarcodeReader()
+            self._worker_local.barcode_reader = barcode_reader
+
+        barcode_val = barcode_reader.read_barcode(raw_img)
         doc.barcode_value = barcode_val
 
         # 2. Deskew and align to canonical coordinates
@@ -71,7 +100,7 @@ class BatchProcessor:
 
         # Retry barcode reading on aligned image if first pass failed
         if not barcode_val:
-            barcode_val = self.barcode_reader.read_barcode(aligned_img)
+            barcode_val = barcode_reader.read_barcode(aligned_img)
             doc.barcode_value = barcode_val
 
         # 3. Classify document

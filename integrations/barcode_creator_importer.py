@@ -96,15 +96,30 @@ class BarcodeImporter:
 
         return imported_count, warnings
 
-    def import_directory(self, dir_path: Path) -> Tuple[int, List[str]]:
+    def import_directory(
+        self, dir_path: Path, sync_removed_sources: bool = False
+    ) -> Tuple[int, List[str]]:
         path = Path(dir_path)
         if not path.is_dir():
             return 0, [f"Not a directory: {dir_path}"]
 
+        files = sorted(path.glob("*.xlsx"))
+        if not files:
+            return 0, [f"No .xlsx workbooks found in {path}; existing mappings were kept."]
+
         total_imported = 0
         all_warnings = []
-        for file in path.glob("*.xlsx"):
+        for file in files:
             count, warns = self.import_file(file)
             total_imported += count
             all_warnings.extend(warns)
+
+        if sync_removed_sources:
+            removed = self.repo.remove_mappings_from_missing_sources(
+                {file.name for file in files}
+            )
+            if removed:
+                all_warnings.append(
+                    f"Folder sync removed {removed} stale mappings from workbooks no longer in this folder."
+                )
         return total_imported, all_warnings
